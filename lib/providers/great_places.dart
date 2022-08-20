@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../models/place.dart';
+import '../helpers/db_helper.dart';
 
 class GreatPlaces with ChangeNotifier {
   // ignore: prefer_final_fields
@@ -8,5 +11,36 @@ class GreatPlaces with ChangeNotifier {
 
   List<Place> get items {
     return [..._items];
+  }
+
+  void addPlace(String pickedTitle, File pickedImage) {
+    final newPlace = Place(
+      id: DateTime.now().toString(),
+      title: pickedTitle,
+      location: null,
+      image: pickedImage,
+    );
+    _items.add(newPlace);
+    notifyListeners();
+    DBHelper.insert('user_places', {
+      'id': newPlace.id,
+      'title': newPlace.title,
+      'image': newPlace.image.path,
+    });
+  }
+
+  Future<void> fetchAndSetPlaces() async {
+    final dataList = await DBHelper.getData('user_places');
+    _items = dataList
+        .map(
+          (item) => Place(
+            id: item['id'] as String,
+            title: item['title'] as String,
+            image: File(item['image'] as String),
+            location: null,
+          ),
+        )
+        .toList();
+    notifyListeners();
   }
 }
